@@ -1,0 +1,474 @@
+<!--
+Add ability to change between letters, like letter #1, letter #2, and letter #3
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <main>
+      <div class="mainContent">
+        <div class="parchmentStack" id="parchmentStack">
+          <!-- https://codepen.io/AgnusDei/pen/NWPbOxL  -->
+          <div class="currentParchment parchment" id="parchment0">
+            <div>
+              <h1>Summer, XW19</h1>
+              <div class="letter" id="letter0"></div>
+            </div>
+            <div class="panel" id="panel0">
+              <form>
+                <input
+                  type="text"
+                  placeholder="Guess a word..."
+                  id="guess0"
+                  name="guess"
+                  class="search"
+                  onkeydown="search(this)"
+                />
+                <input type="submit" style="display: none" id="submit0" />
+              </form>
+
+              <ul class="history" id="history0"></ul>
+            </div>
+          </div>
+        </div>
+        <form id="revealerForm">
+          <input
+            type="text"
+            placeholder="?"
+            id="revealTextBox"
+            name="revealTextBox"
+            class="revealTextBox"
+            onkeydown="revealNewLetter(this)"
+          />
+          <input type="submit" style="display: none" id="submit4" />
+        </form>
+      </div>
+    </main>
+  </body>
+
+  <script>
+
+
+        // letters
+        const letter0 = {
+        title: "Summer, XW19",
+      content: "<p> Dear Stuart, </p> <p> The Sparrows were in town today, and they are asking for volunteers. I will miss you and Kos so much, but if you are reading this, that probably means I am already gone to the Badlands. </p> <p> I promise I will return as soon as I can. For now, keep scratching the runes. There is dark magic out there. </p> <p> Yours, </p> <p> Yel </p>", // The letter as a string
+      words: [],
+      solved: [], // Array to store whether each word has been guessed
+      history: [], // Array to store the history of guessed words
+      id: "0"
+    };
+
+                const letter1 = {
+      title:"Autumn, XW19",
+      content: "<p> Stuart, </p> <p> I have been approached by someone, a species I have never seen before. They seemed like Sparrows with dark feathers, except there was something distinctly different about them. Were they a Raven? </p> <p> This letter is likely to be intercepted, so I will be brief. They claim to have something we do not have, something to revolutionize how we live. </p> <p> They could not tell me more when we met, but I will be seeing them again soon. I will write when I can. </p> <p> Yel </p>", // The letter as a string
+      words: [],
+      solved: [], // Array to store whether each word has been guessed
+      history: [], // Array to store the history of guessed words
+      id: "1"
+    };
+
+                const letter2 = {
+      title: "Winter, XW20",
+      content: "<p> Dearest Yel, </p> <p> I have hired rune writers like you suggested, and now our neighbors are doing it too, but we are running short on cash. I will likely take up a job soon, and move the family into the tree stump near the riverbed. I expect we’ll travel to Gwelf come the spring to try and wrangle up some work. </p> <p> Kos is getting strong now like his mother, but I worry that he will soon forget you. Write back when you can. </p> <p> Forever yours, </p> <p> Stuart </p>", // The letter as a string
+      words: [], //array to store all the words broken up by spaces
+      solved: [], // Array to store whether each word has been guessed
+      history: [], // Array to store the history of guessed words
+      id: "2"
+      };
+
+
+
+
+
+
+      letters = [];
+
+      ignoreArray = ["<p>",
+                        "</p>",
+                        "a",
+                        "an",
+                        "the",
+                        "have",
+                         "has",
+                         "had","and",
+                         "is","i","you",
+                         "are",
+                         "were","was","will",
+                         "been",
+                         "do","done",
+                         "does",
+                         "did",
+                         "can",
+                         "could",
+                        "aboard",
+                        "about",
+                        "above",
+                        "across",
+                        "after",
+                        "against",
+                        "along",
+                        "amid",
+                        "among",
+                        "anti",
+                        "around",
+                        "as",
+                        "at",
+                        "before",
+                        "behind",
+                        "below",
+                        "beneath",
+                        "beside",
+                        "besides",
+                        "between",
+                        "beyond",
+                        "but",
+                        "by",
+                        "concerning",
+                        "considering",
+                        "despite",
+                        "down",
+                        "during",
+                        "except",
+                        "excepting",
+                        "excluding",
+                        "following",
+                        "for",
+                        "from",
+                        "in",
+                        "inside",
+                        "into",
+                        "like",
+                        "minus",
+                        "near",
+                        "of",
+                        "off",
+                        "on",
+                        "onto",
+                        "opposite",
+                        "outside",
+                        "over",
+                        "past",
+                        "per",
+                        "plus",
+                        "regarding",
+                        "round",
+                        "save",
+                        "since",
+                        "than",
+                        "through",
+                        "to",
+                        "toward",
+                        "towards",
+                        "under",
+                        "underneath",
+                        "unlike",
+                        "until",
+                        "up",
+                        "upon",
+                        "versus",
+                        "via",
+                        "with",
+                        "within",
+                        "without"];
+    
+    punctuationArray = [".",",","?"];
+
+        function setup(){
+
+        letters = [letter0];
+
+        setUpNewLetters(letters[0]);
+
+        }
+
+        function setUpNewLetters(letterToSetUp){
+
+       lnum = letterToSetUp.id;
+
+          letters[lnum].words = letters[lnum].content.toLowerCase()
+        // .replace(/<p>/g,"")
+        // .replace(/<\/p>/g,"")
+        .split(" ");
+
+          for(i = 0; i < letters[lnum].words.length; i++){
+            if(getOccurrence(ignoreArray, letters[lnum].words[i]) < 1){
+              if(ignoreArray.includes(letters[lnum].words[i]) && punctuationArray.includes(letters[lnum].words[i].charAt(letters[lnum].words[i].length-1))){
+                letters[lnum].solved[i] = true;
+              } else {
+              letters[lnum].solved[i]= false;
+                
+              }
+              
+            } else {
+              letters[lnum].solved[i] = true;
+            }
+
+    }
+    displayRedacted(letters[lnum].id);
+
+
+
+        }
+
+        function displayRedacted(id) {
+
+
+        letterArray = letters[id].words
+        solvedArray = letters[id].solved
+        historyItems = letters[id].history
+
+
+        var redactedSentence = '';
+        for (i = 0; i < letterArray.length; i++) {
+
+            if (solvedArray[i]) { //do not redact the word because it's in the IgnoreArray OR it's solved
+                redactedSentence += letterArray[i] + ' ';
+            } else { //redact the word
+
+              redactedSentence +="<span class='redact'>";
+
+                for(x = 0; x < letterArray[i].length; x++){ //cycle through each letter of the redacted word so that the redacted black squares equal the number of letters in the redacted word
+                  redactAdd="";
+
+                  switch (letterArray[i].charAt(x)) {
+                    case ',':
+                      redactAdd = '</span>,';
+                      break;
+                    case ".":
+                      redactAdd = '</span>.';
+                      break;
+                    case "?":
+                      redactAdd = '</span>?';
+                      break;
+                    default:
+                      if(x == letterArray[i].length-1){
+                        redactAdd = 'a</span>'
+                      } else {
+                      redactAdd = 'a';
+                      //redactAdd='█';
+                      }
+                  }
+
+                  redactedSentence += redactAdd;
+
+                }
+                 redactedSentence += ' </span>'; //at the end of the redacted word, add a space
+            }
+        }
+        document.getElementById("letter"+id).innerHTML = redactedSentence;
+    }
+
+        function revealNewLetter(){
+        if(event.keyCode == 13) {
+
+          TextboxItem = document.getElementById("revealTextBox");
+
+              revealerText = TextboxItem.value.toLowerCase().trim();
+
+          TextboxItem.value="";
+
+
+    switch(revealerText){
+        case "leaves":
+        letterToAdd = letter1;
+        if(letters.length == 1 && letterToAdd.id == 1){
+        addLetter(letterToAdd);
+        }
+        break;
+        case "frosty":
+        letterToAdd = letter2;
+        if (letters.length == 2 && letterToAdd.id == 2){
+        addLetter(letterToAdd);
+        }
+        break;
+    }
+
+
+
+
+
+        }
+     }
+
+        function addLetter(letterToAdd){
+
+          letters.push(letterToAdd);
+
+
+
+          newLetterDOM = document.createElement("div");
+
+          newLetterDOM.classList.add("parchment");
+          newLetterDOM.setAttribute("id", "parchment"+letterToAdd.id);
+
+          newLetterContent = document.createElement("div");
+
+           var h1= document.createElement('H1');
+               h1.innerHTML = letterToAdd.title;
+
+          newLetterContentInside = document.createElement("div");
+          newLetterContentInside.classList.add("letter");
+          newLetterContentInside.setAttribute("id","letter"+letterToAdd.id);
+
+          newLetterContent.appendChild(h1);
+          newLetterContent.appendChild(newLetterContentInside)
+
+          newLetterDOM.appendChild(newLetterContent);
+
+
+
+          newPanel = document.createElement("div");
+          newPanel.classList.add("panel");
+          newPanel.setAttribute("id","panel"+letterToAdd.id);
+
+          newForm = document.createElement("FORM");
+          var newInput = document.createElement("input");
+              newInput.type = "text";
+              newInput.placeholder = "Guess a word..."
+              newInput.setAttribute("id","guess"+letterToAdd.id)
+              newInput.name="guess"
+              newInput.classList.add("search");
+              newInput.onkeydown = function() {
+      search();
+    };
+
+          newForm.appendChild(newInput);
+
+          newInput= document.createElement("submit");
+          newInput.style.display = "none";
+          newInput.setAttribute("id","submit"+letterToAdd.id);
+
+          newForm.appendChild(newInput)
+
+          newPanel.appendChild(newForm);
+
+          newHistory = document.createElement('ul');
+          newHistory.classList.add("history")
+          newHistory.setAttribute("id","history"+letterToAdd.id)
+
+          newPanel.appendChild(newHistory);
+
+          newLetterDOM.appendChild(newPanel);
+
+
+
+          document.getElementById("parchmentStack").appendChild(newLetterDOM);
+
+           setUpNewLetters(letters[letterToAdd.id]);
+
+
+          //     Papers move above when you click on them
+
+    document.querySelectorAll('.parchment').forEach(paper => {
+      paper.addEventListener('click', () => {
+        // Bring the clicked paper to the front
+        paper.classList.add('currentParchment');
+        document.querySelectorAll('.parchment').forEach(otherPaper => {
+          if (otherPaper !== paper) {
+            otherPaper.classList.remove('currentParchment');
+          }
+        });
+      });
+    });
+
+
+
+    //             <!-- https://codepen.io/AgnusDei/pen/NWPbOxL  -->
+    //   <div class="parchment" id="parchment2">
+    //     <div>
+    //       <h1>Winter, XW20</h1>
+    //       <div class="letter" id="letter2"></div>
+    //     </div>
+
+    //     <div class="panel" id="panel2">
+    //       <form>
+    //         <input type="text" placeholder="Guess a word..." id="guess2" name="guess" class="search" onkeydown="search(this)"/>
+    //         <input type="submit" style="display: none" id="submit2"/>
+    //       </form>
+
+    //       <ul class="history" id="history2">
+    //       </ul>
+
+    //     </div>
+    //   </div>
+
+        }
+
+        function search() {
+        if(event.keyCode == 13) {
+
+          var currentPage = document.querySelector('.currentParchment'); // Select the div with class 'CurrentPage'
+          id = currentPage.id.charAt(currentPage.id.length-1);
+
+          currentGuess = document.getElementById("guess" + id).value.toLowerCase().trim();
+
+
+          document.getElementById("guess" + id).value="";
+
+
+          if(getOccurrence(letters[id].history, currentGuess) < 1){//if you haven't already guessed the word
+
+
+          isWordInString(id, currentGuess, letters[id].words);
+          }
+
+        }
+    }
+
+        function isWordInString(id, needle, haystack) {
+
+          wordWithoutPunctuation = removePunctuation(needle)
+          num = getOccurrence(haystack, wordWithoutPunctuation);
+
+          letterArray = letters[id].words
+
+
+          if(num > 0){
+            for(i = 0; i < letterArray.length; i++){
+              arrayItemWithoutPunctuation = removePunctuation(letters[id].words[i])
+
+              if(arrayItemWithoutPunctuation == wordWithoutPunctuation){
+                letters[id].solved[i] = true;
+              }
+            }
+          }
+
+
+
+          //update the redacted words
+          displayRedacted(id);
+
+          addToHistory(id, wordWithoutPunctuation, num);
+
+          return (num > 0);
+    }
+
+        function addToHistory(id, needle, num) {
+
+                historyItems.push(needle);
+
+      var ul = document.getElementById("history"+id);
+      var li = document.createElement("li");
+      li.appendChild(document.createTextNode(needle + ", " + num));
+
+          ul.insertBefore(li, ul.firstChild);
+
+
+      }
+
+        function getOccurrence(array, value) {
+          return array.filter((v) => (removePunctuation(v) === value)).length;
+      }
+
+        function removePunctuation(word) {
+          return word.replace(/[,\.?!]/g,"");
+        }
+  </script>
+</html>
